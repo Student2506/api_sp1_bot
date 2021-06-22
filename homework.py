@@ -16,7 +16,6 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
 logging.basicConfig(
     level=logging.DEBUG,
-    filename='bot_debug.log',
     format='%(asctime)s, %(levelname)s, %(message)s, %(name)s'
 )
 
