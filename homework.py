@@ -33,10 +33,10 @@ def parse_homework_status(homework):
         if 'status' in homework:
             status = homework['status']
             if status in statuses.keys():
-                return ('У вас проверили работу'
+                return ('У вас проверили работу '
                         f'"{homework_name}"!\n\n{statuses[status]}')
             elif status == 'reviewing':
-                return 'Работа ушла на проверку'
+                return f'Работа "{homework_name}" ушла на проверку'
     return 'Неверный ответ сервера.'
 
 
@@ -53,14 +53,14 @@ def get_homeworks(current_timestamp=None):
         )
     except Exception as e:
         logging.error(f'Unable to get data from API: {e}')
-        send_message(f'Unable to get data from API: {e}', CHAT_ID)
+        send_message(f'Unable to get data from API: {e}')
 
     return homework_statuses.json()
 
 
-def send_message(message, chat_id):
+def send_message(message):
     logging.info('Отправляем сообщение')
-    return bot.send_message(chat_id, message)
+    return bot.send_message(CHAT_ID, message)
 
 
 def main():
@@ -76,14 +76,14 @@ def main():
                     message = parse_homework_status(current_homework)
                     logging.debug(message)
                     if status != message:
-                        send_message(message, CHAT_ID)
+                        send_message(message)
                         status = message
 
             time.sleep(SERVER_ROUND_TRIP_TIMEOUT)
 
         except Exception as e:
             logging.error(f'Бот упал с ошибкой: {e}')
-            send_message(f'Бот упал с ошибкой: {e}', CHAT_ID)
+            send_message(f'Бот упал с ошибкой: {e}')
             time.sleep(SERVER_ERROR_REPEAT_TIMEOUT)
 
 
