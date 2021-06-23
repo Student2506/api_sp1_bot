@@ -74,6 +74,7 @@ def main():
                 current_homework = homeworks.get('homeworks')[0]
                 if current_homework is not None:
                     message = parse_homework_status(current_homework)
+                    logging.debug(message)
                     if status != message:
                         send_message(message, CHAT_ID)
                         status = message
