@@ -1,7 +1,6 @@
 import logging
 import os
 import time
-# import datetime as dt
 
 import requests
 import telegram
@@ -13,6 +12,10 @@ load_dotenv()
 PRAKTIKUM_TOKEN = os.getenv('PRAKTIKUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
+SERVER_ROUND_TRIP_TIMEOUT = 60 * 10
+SERVER_ERROR_REPEAT_TIMEOUT = SERVER_ROUND_TRIP_TIMEOUT
+
+bot = telegram.Bot(token=TELEGRAM_TOKEN)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -21,53 +24,66 @@ logging.basicConfig(
 
 
 def parse_homework_status(homework):
-    homework_name = homework['homework_name']
-    if homework['status'] != 'approved':
-        verdict = 'К сожалению, в работе нашлись ошибки.'
-    else:
-        verdict = 'Ревьюеру всё понравилось, работа зачтена!'
-    return f'У вас проверили работу "{homework_name}"!\n\n{verdict}'
+    statuses = {
+        'approved': 'Ревьюеру всё понравилось, работа зачтена!',
+        'rejected': 'К сожалению, в работе нашлись ошибки.'
+    }
+    if 'homework_name' in homework:
+        homework_name = homework['homework_name']
+        if 'status' in homework:
+            status = homework['status']
+            if status in statuses.keys():
+                return ('У вас проверили работу'
+                        f'"{homework_name}"!\n\n{statuses[status]}')
+            elif status == 'reviewing':
+                return 'Работа ушла на проверку'
+    return 'Неверный ответ сервера.'
 
 
-def get_homeworks(current_timestamp):
+def get_homeworks(current_timestamp=None):
+    homework_statuses = []
     headers = {'Authorization': 'OAuth ' + PRAKTIKUM_TOKEN}
+    if current_timestamp is None:
+        current_timestamp = int(time.time())
     params = {'from_date': current_timestamp}
-    homework_statuses = requests.get(
-        'https://praktikum.yandex.ru/api/user_api/homework_statuses/',
-        headers=headers, params=params
-    )
+    try:
+        homework_statuses = requests.get(
+            'https://praktikum.yandex.ru/api/user_api/homework_statuses/',
+            headers=headers, params=params
+        )
+    except Exception as e:
+        logging.error(f'Unable to get data from API: {e}')
+        send_message(f'Unable to get data from API: {e}', CHAT_ID)
+
     return homework_statuses.json()
 
 
 def send_message(message, chat_id):
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     logging.info('Отправляем сообщение')
     return bot.send_message(chat_id, message)
 
 
 def main():
-    current_timestamp = int(time.time())  # Начальное значение timestamp
+    current_timestamp = int(time.time())
     logging.debug('Бот стартовал')
-    # current_timestamp = (
-    #   int((dt.datetime.now() - dt.timedelta(days=16)).timestamp())
-    # )
-
-    statuses = {}
+    status = ''
     while True:
         try:
             homeworks = get_homeworks(current_timestamp)
-            for homework in homeworks['homeworks']:
-                if statuses.get(homework['id']) != homework['status']:
-                    message = parse_homework_status(homework)
-                    send_message(message, CHAT_ID)
-                    statuses[homework['id']] = homework['status']
+            if len(homeworks.get('homeworks')) > 0:
+                current_homework = homeworks.get('homeworks')[0]
+                if current_homework is not None:
+                    message = parse_homework_status(current_homework)
+                    if status != message:
+                        send_message(message, CHAT_ID)
+                        status = message
 
-            time.sleep(5 * 60)  # Опрашивать раз в пять минут
+            time.sleep(SERVER_ROUND_TRIP_TIMEOUT)
 
         except Exception as e:
             logging.error(f'Бот упал с ошибкой: {e}')
             send_message(f'Бот упал с ошибкой: {e}', CHAT_ID)
-            time.sleep(5)
+            time.sleep(SERVER_ERROR_REPEAT_TIMEOUT)
 
 
 if __name__ == '__main__':
