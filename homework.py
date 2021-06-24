@@ -34,7 +34,7 @@ def parse_homework_status(homework):
     homework_name = homework.get('homework_name')
     status = homework.get('status')
 
-    if homework is None and status is None:
+    if homework_name is None and status is None:
         return 'Неверный ответ сервера.'
     else:
         if status in statuses.keys():
