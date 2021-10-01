@@ -15,7 +15,7 @@ CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 SERVER_ROUND_TRIP_TIMEOUT = 60 * 10
 SERVER_ERROR_REPEAT_TIMEOUT = SERVER_ROUND_TRIP_TIMEOUT
 API_URL_PRAKTIKUM = (
-    'https://praktikum.yandex.ru/api/user_api/homework_statuses/'
+    'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 )
 
 bot = telegram.Bot(token=TELEGRAM_TOKEN)
@@ -46,6 +46,7 @@ def parse_homework_status(homework):
 
 
 def get_homeworks(current_timestamp=None):
+    logging.info('Получаем домашние работы')
     homework_statuses = []
     headers = {'Authorization': f'OAuth {PRAKTIKUM_TOKEN}'}
     if current_timestamp is None:
