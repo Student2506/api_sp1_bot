@@ -76,15 +76,18 @@ def main():
     while True:
         try:
             homeworks = get_homeworks(current_timestamp)
-            if len(homeworks.get('homeworks')) > 0:
-                current_homework = homeworks.get('homeworks')[0]
-                if current_homework is not None:
-                    message = parse_homework_status(current_homework)
-                    logging.debug(message)
-                    current_timestamp = current_homework.get('current_date')
-                    if status != message:
-                        send_message(message)
-                        status = message
+            if homeworks is not None:
+                if len(homeworks.get('homeworks')) > 0:
+                    current_homework = homeworks.get('homeworks')[0]
+                    if current_homework is not None:
+                        message = parse_homework_status(current_homework)
+                        logging.debug(message)
+                        current_timestamp = current_homework.get(
+                            'current_date'
+                        )
+                        if status != message:
+                            send_message(message)
+                            status = message
 
             time.sleep(SERVER_ROUND_TRIP_TIMEOUT)
 
