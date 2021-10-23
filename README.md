@@ -20,4 +20,4 @@ requests
     python homework.py
 ```
 ### Авторы
-Павел
+Автор: https://t.me/Student2506
